@@ -1,10 +1,10 @@
 module Main exposing (Action(..), State, initiaState, main, reducer, view)
 
 import Browser
-import Browser.Events exposing (onKeyPress)
-import Html exposing (Html, button, div, input, li, text, ul)
+import Html exposing (Attribute, Html, button, div, input, li, text, ul)
 import Html.Attributes exposing (..)
-import Html.Events exposing (onClick, onInput)
+import Html.Events exposing (keyCode, on, onClick, onInput)
+import Json.Decode
 
 
 main =
@@ -34,7 +34,6 @@ initiaState =
 
 type Action
     = InputChange String
-    | KeyPress String
     | SendMessage
 
 
@@ -50,16 +49,6 @@ reducer action state =
                 , inputText = ""
             }
 
-        KeyPress e ->
-            if e.value == "Enter" then
-                { state
-                    | messages = List.append state.messages [ state.inputText ]
-                    , inputText = ""
-                }
-
-            else
-                state
-
 
 
 -- VIEW
@@ -70,13 +59,26 @@ view state =
     div []
         [ renderList state.messages
         , input
-            [ placeholder "Type a message", value state.inputText, onInput InputChange, onKeyPress KeyPress ]
+            [ placeholder "Type a message", value state.inputText, onInput InputChange, onEnter SendMessage ]
             []
         , button [ onClick SendMessage ] [ text "Send" ]
         ]
 
 
-renderList : List String -> Html msg
+onEnter : Action -> Attribute Action
+onEnter action =
+    let
+        isEnter code =
+            if code == 13 then
+                Json.Decode.succeed action
+
+            else
+                Json.Decode.fail "not ENTER"
+    in
+    on "keydown" (Json.Decode.andThen isEnter keyCode)
+
+
+renderList : List String -> Html action
 renderList lst =
     ul []
         (List.map (\l -> li [] [ text l ]) lst)
