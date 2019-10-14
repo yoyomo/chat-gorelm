@@ -38,31 +38,35 @@ func ConnectToDB() (db *DB){
 }
 
 // (2)投稿1件の取得
-func (db *DB) GetPost(id int) (post r.Post, err error) {
+func (db *DB) GetPost(id string) (post r.Post, err error) {
 	post = r.Post{}
 	err = db.QueryRow("select id,content,author from posts where id = $1", id).Scan(&post.Id, &post.Content, &post.Author)
 	return
 }
 
 // (3)新規投稿の生成
-func (db *DB) Create(post *r.Post) (err error) {
+func (db *DB) Create(resourceType string, data map[string]interface{}) (err error) {
+
 	statement := "insert into posts (content,author) values ($1,$2) returning id"
 	stmt, err := db.Prepare(statement)
 	if err != nil {
 		return
 	}
 	defer stmt.Close()
-	err = stmt.QueryRow(post.Content, post.Author).Scan(&post.Id)
+	var id string
+
+	err = stmt.QueryRow(data["Content"], data["Author"]).Scan(&id)
+	data["Id"] = id
 	return
 }
 
-func (db *DB)  Update(post *r.Post) (err error) {
-	_, err = db.Exec("update posts set content = $2,author=$3 where id = $1", post.Id, post.Content, post.Author)
+func (db *DB)  Update(resourceType string, id string, data map[string]interface{}) (err error) {
+	_, err = db.Exec("update posts set content = $2,author=$3 where id = $1", id, data["Content"], data["Author"])
 	return
 }
 
-func (db *DB) Delete(post *r.Post) (err error) {
-	_, err = db.Exec("delete from posts where id=$1", post.Id)
+func (db *DB) Delete(id string) (err error) {
+	_, err = db.Exec("delete from posts where id=$1", id)
 	return
 }
 

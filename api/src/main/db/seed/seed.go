@@ -10,11 +10,9 @@ import (
 	_ "github.com/lib/pq"
 )
 
-var db *routes.DB
-
 func main() {
 
-	db = routes.ConnectToDB()
+	db := routes.ConnectToDB()
 
 	post := r.Post{
 		Content: "Hello",
